@@ -211,7 +211,33 @@ def adaptive_blocks(
     base_size = max(image.size) / max_detail
     max_block_size = base_size * 1.75
     edge_map = image.convert("L").filter(ImageFilter.FIND_EDGES)
+    gray_pixels = image.convert("L").tobytes()
     blocks = []
+
+    def find_edge_cut(start, end, cross_start, cross_end, vertical):
+        gap = max(1, int(base_size * 0.35))
+        if end - start <= gap * 2 + 1:
+            return None
+        sample_step = max(1, (cross_end - cross_start) // 128)
+        best_score = 0
+        best_position = None
+        for position in range(start + gap, end - gap + 1):
+            total = 0
+            samples = 0
+            for cross in range(cross_start, cross_end, sample_step):
+                if vertical:
+                    first = gray_pixels[cross * image.width + position - 1]
+                    second = gray_pixels[cross * image.width + position]
+                else:
+                    first = gray_pixels[(position - 1) * image.width + cross]
+                    second = gray_pixels[position * image.width + cross]
+                total += abs(second - first)
+                samples += 1
+            score = total / samples
+            if score > best_score:
+                best_score = score
+                best_position = position
+        return best_position if best_score >= 12 else None
 
     def split_region(left, top, right, bottom):
         region = image.crop((left, top, right, bottom))
@@ -233,8 +259,22 @@ def adaptive_blocks(
             blocks.append((left, top, right, bottom, representative_color))
             return
 
-        x_parts = (left, (left + right) // 2, right) if split_x else (left, right)
-        y_parts = (top, (top + bottom) // 2, bottom) if split_y else (top, bottom)
+        cut_x = (
+            find_edge_cut(left, right, top, bottom, True) if split_x else None
+        )
+        cut_y = (
+            find_edge_cut(top, bottom, left, right, False) if split_y else None
+        )
+        x_parts = (
+            (left, cut_x or (left + right) // 2, right)
+            if split_x
+            else (left, right)
+        )
+        y_parts = (
+            (top, cut_y or (top + bottom) // 2, bottom)
+            if split_y
+            else (top, bottom)
+        )
         for y_index in range(len(y_parts) - 1):
             for x_index in range(len(x_parts) - 1):
                 split_region(

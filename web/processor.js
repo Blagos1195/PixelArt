@@ -41,7 +41,11 @@ function processImage(source,opts){
   const color=s.map((v,c)=>Math.round(v/n*(1-weight)+dominant[c+1]/dominant[0]*weight));
   const sx=r-l>Math.max(1,base),sy=b-t>Math.max(1,base),split=(std>preset.variation||edgeMean>6)&&(sx||sy),force=(r-l>maxBlock||b-t>maxBlock);
   if((!force&&!split)||(!sx&&!sy)){blocks.push([l,t,r,b,[...color,Math.round(alpha/n)]]);return}
-  const xs=sx?[l,Math.floor((l+r)/2),r]:[l,r],ys=sy?[t,Math.floor((t+b)/2),b]:[t,b];
+  const gap=Math.max(1,Math.floor(base*.35));
+  let cutX=null,cutY=null,bestX=0,bestY=0;
+  if(sx&&r-l>gap*2+1){const sampleStep=Math.max(1,Math.floor((b-t)/128));for(let x=l+gap;x<=r-gap;x++){let sum=0,nSamples=0;for(let y=t;y<b;y+=sampleStep){sum+=Math.abs(gray[y*w+x]-gray[y*w+x-1]);nSamples++}const score=sum/nSamples;if(score>bestX){bestX=score;cutX=x}}if(bestX<12)cutX=null}
+  if(sy&&b-t>gap*2+1){const sampleStep=Math.max(1,Math.floor((r-l)/128));for(let y=t+gap;y<=b-gap;y++){let sum=0,nSamples=0;for(let x=l;x<r;x+=sampleStep){sum+=Math.abs(gray[y*w+x]-gray[(y-1)*w+x]);nSamples++}const score=sum/nSamples;if(score>bestY){bestY=score;cutY=y}}if(bestY<12)cutY=null}
+  const xs=sx?[l,cutX??Math.floor((l+r)/2),r]:[l,r],ys=sy?[t,cutY??Math.floor((t+b)/2),b]:[t,b];
   for(let yy=0;yy<ys.length-1;yy++)for(let xx=0;xx<xs.length-1;xx++)region(xs[xx],ys[yy],xs[xx+1],ys[yy+1]);
  }
  region(0,0,w,h);

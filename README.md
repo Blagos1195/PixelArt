@@ -12,7 +12,7 @@ A desktop pixel-art generator and a separate browser edition for GitHub Pages.
 
 The website uses JavaScript, Canvas and a Web Worker. Images are processed locally in the browser and are not uploaded to a server.
 
-It includes six processing presets, adaptive rectangular blocks, representative colours, palette reduction, background snapping, optional grid suppression, near-black snapping and isolated-colour cleanup.
+It includes six processing presets, adaptive rectangular blocks with edge-aligned subdivision, representative colours, palette reduction, background snapping, optional grid suppression, near-black snapping and isolated-colour cleanup. Strong straight boundaries are used as preferred split positions so blocks are less likely to average colours from opposite sides of an obvious edge.
 
 The drawing stage paints each block in sequence and moves a turtle cursor across the canvas. Drawing speed can be adjusted, paused, restarted or skipped. Results can be exported as PNG.
 
