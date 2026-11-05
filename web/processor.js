@@ -19,6 +19,46 @@ function medianGrid(data,w,h){
  for(let y=0;y<h;y++)for(let x=0;x<w;x++){const i=(y*w+x)*4;for(let c=0;c<3;c++){const a=[];for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++)a.push(at(x+dx,y+dy,c));a.sort((a,b)=>a-b);copy[i+c]=a[4]}}
  return copy;
 }
+function buildPalette(histogram,count){
+ const entries=Array.from(histogram.values());
+ if(!entries.length)return [];
+ const range=box=>{const bounds=[0,1,2].map(c=>[Infinity,-Infinity]);for(const e of box)for(let c=0;c<3;c++){bounds[c][0]=Math.min(bounds[c][0],e.bin[c]);bounds[c][1]=Math.max(bounds[c][1],e.bin[c])}return bounds.map(v=>v[1]-v[0])};
+ const boxes=[entries];
+ while(boxes.length<count){
+  let selected=-1,priority=-1,channel=0;
+  for(let i=0;i<boxes.length;i++){
+   const box=boxes[i];if(box.length<2)continue;
+   const ranges=range(box),axis=ranges.indexOf(Math.max(...ranges));
+   const score=ranges[axis]*box.reduce((n,e)=>n+e.count,0);
+   if(score>priority){priority=score;selected=i;channel=axis}
+  }
+  if(selected<0)break;
+  const box=boxes.splice(selected,1)[0].slice().sort((a,b)=>a.bin[channel]-b.bin[channel]);
+  const half=box.reduce((n,e)=>n+e.count,0)/2;
+  let total=0,cut=0;
+  for(;cut<box.length-1;cut++){total+=box[cut].count;if(total>=half){cut++;break}}
+  boxes.push(box.slice(0,cut),box.slice(cut));
+ }
+ return boxes.map(box=>{
+  const totals=[0,0,0],weight=box.reduce((n,e)=>n+e.count,0);
+  for(const e of box)for(let c=0;c<3;c++)totals[c]+=e.sum[c];
+  return totals.map(v=>Math.round(v/weight));
+ });
+}
+function nearestPaletteColor(color,palette){
+ let best=palette[0],bestDistance=Infinity;
+ for(const candidate of palette){const d=dist(color,candidate);if(d<bestDistance){bestDistance=d;best=candidate}}
+ return best;
+}
+function paletteRms(histogram,palette){
+ let error=0,total=0;
+ for(const e of histogram.values()){
+  const source=e.sum.map(v=>v/e.count),mapped=nearestPaletteColor(source,palette);
+  error+=e.count*((source[0]-mapped[0])**2+(source[1]-mapped[1])**2+(source[2]-mapped[2])**2)/3;
+  total+=e.count;
+ }
+ return total?Math.sqrt(error/total):0;
+}
 function processImage(source,opts){
  const preset=PRESETS[opts.preset]||PRESETS.balanced,detail=opts.detail||preset.detail;
  let w=source.width,h=source.height,data=source.data.slice();
@@ -49,15 +89,23 @@ function processImage(source,opts){
   for(let yy=0;yy<ys.length-1;yy++)for(let xx=0;xx<xs.length-1;xx++)region(xs[xx],ys[yy],xs[xx+1],ys[yy+1]);
  }
  region(0,0,w,h);
- const paletteCount=opts.colours==="auto"?null:Number(opts.colours);
- const samples=blocks.filter(b=>b[4][3]).map(b=>b[4].slice(0,3));
- let count=paletteCount||[2,4,6,8,12,16,24,32,48,64].find(n=>samples.length<=n*3)||64;
- count=Math.max(2,Math.min(256,count));
- const centers=[];
- if(samples.length){for(let i=0;i<count;i++){const p=samples[Math.floor(i*samples.length/count)];centers.push(p.slice())}
-  for(let round=0;round<5;round++){const sums=centers.map(()=>[0,0,0,0]);for(const p of samples){let best=0,bd=Infinity;for(let j=0;j<centers.length;j++){const d=dist(p,centers[j]);if(d<bd){bd=d;best=j}}const s=sums[best];s[0]++;s[1]+=p[0];s[2]+=p[1];s[3]+=p[2]}for(let j=0;j<centers.length;j++)if(sums[j][0])centers[j]=sums[j].slice(1).map(v=>Math.round(v/sums[j][0]))}
+ const histogram=new Map(),totalArea=w*h,sampleLimit=4096;
+ for(const block of blocks){
+  const [l,t,r,b,color]=block;if(!color[3])continue;
+  const weight=Math.max(1,Math.round((r-l)*(b-t)*sampleLimit/totalArea));
+  const key=[color[0]>>3,color[1]>>3,color[2]>>3].join(",");
+  const entry=histogram.get(key)||{bin:key.split(",").map(Number),count:0,sum:[0,0,0]};
+  entry.count+=weight;
+  for(let c=0;c<3;c++)entry.sum[c]+=color[c]*weight;
+  histogram.set(key,entry);
  }
- const mapped=blocks.map(b=>{let c=b[4];if(c[3]&&centers.length){let best=centers[0],bd=Infinity;for(const p of centers){const d=dist(c,p);if(d<bd){bd=d;best=p}}c=[...best.map(v=>v<=20?0:v),c[3]];if(bg&&dist(c,bg)<=36)c=[...bg,c[3]]}return [...b.slice(0,4),c]});
+ const paletteCount=opts.colours==="auto"?null:Number(opts.colours);
+ const candidates=[2,4,6,8,12,16,24,32,48,64];
+ let count=paletteCount;
+ if(count===null){count=candidates[candidates.length-1];for(const candidate of candidates){const palette=buildPalette(histogram,candidate);if(paletteRms(histogram,palette)<=8){count=candidate;break}}}
+ count=Math.max(2,Math.min(256,count));
+ const palette=buildPalette(histogram,count);
+ const mapped=blocks.map(b=>{let c=b[4];if(c[3]&&palette.length){const nearest=nearestPaletteColor(c,palette);c=[...nearest.map(v=>v<=20?0:v),c[3]];if(bg&&dist(c,bg)<=36)c=[...bg,c[3]]}return [...b.slice(0,4),c]});
  const owner=new Int32Array(w*h);owner.fill(-1);
  for(let i=0;i<mapped.length;i++){const [l,t,r,b]=mapped[i];for(let y=t;y<b;y++)owner.fill(i,y*w+l,y*w+r)}
  for(let i=0;i<mapped.length;i++){const [l,t,r,b,c]=mapped[i],area=(r-l)*(b-t),lum=.2126*c[0]+.7152*c[1]+.0722*c[2];if(area>Math.max(2,base*base*.2)||lum<32||!c[3])continue;const edges=new Map(),count=j=>{if(j<0||j===i)return;const n=mapped[j][4];if(!n[3])return;const key=n.slice(0,3).join(",");edges.set(key,(edges.get(key)||0)+1)};if(l>0)for(let y=t;y<b;y++)count(owner[y*w+l-1]);if(r<w)for(let y=t;y<b;y++)count(owner[y*w+r]);if(t>0)for(let x=l;x<r;x++)count(owner[(t-1)*w+x]);if(b<h)for(let x=l;x<r;x++)count(owner[b*w+x]);let best=null,shared=0,total=0;for(const [key,value] of edges){total+=value;if(value>shared){best=key;shared=value}}if(best&&shared/total>=.75){const replacement=best.split(",").map(Number);if(dist(c,replacement)<=45)mapped[i][4]=[...replacement,c[3]]}} return {width:w,height:h,blocks:mapped};
