@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#111318">
+<title>Pixel Art Generator</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="topbar"><a class="brand" href="./"><span class="brand-mark">▦</span> Pixel Art Generator</a><span class="top-note">A little pixel-making machine</span></header>
+<main class="layout">
+<section class="intro">
+<p class="eyebrow">IMAGE → PIXEL ART</p>
+<h1>Make something<br><span>pixel perfect.</span></h1>
+<p class="sub">Turn photographs, drawings and sprites into chunky, colourful artwork. Then watch the turtle draw every block.</p>
+</section>
+<section class="workspace">
+<aside class="panel controls">
+<div class="panel-heading"><div><p class="eyebrow">01 / SOURCE</p><h2>Your image</h2></div></div>
+<label class="drop-zone" id="dropZone" for="fileInput"><span class="upload-icon">＋</span><strong>Drop an image here</strong><span>or click to browse</span><small>PNG, JPG, WEBP, GIF, BMP, TIFF</small></label>
+<input id="fileInput" type="file" accept="image/*" hidden>
+<div class="source-row"><span id="fileName">No image selected</span><button class="text-button" id="clearImage" type="button">Clear</button></div>
+<div class="rule"></div>
+<div class="panel-heading"><div><p class="eyebrow">02 / SETTINGS</p><h2>Shape the result</h2></div></div>
+<label class="field-label" for="preset">Input style</label>
+<select id="preset">
+<option value="balanced">General</option><option value="photo">Photograph</option><option value="illustration">Illustration / cartoon</option><option value="pixel-art">Pixel art / sprite</option><option value="grid-drawing">Grid-paper drawing</option><option value="line-art">Line art / logo</option>
+</select>
+<div class="field-pair"><label><span class="field-label">Pixel detail <output id="detailValue">80</output></span><input id="detail" type="range" min="12" max="240" value="80"></label><label><span class="field-label">Palette colours <output id="colourValue">Auto</output></span><select id="colours"><option value="auto">Auto</option><option>4</option><option>8</option><option>12</option><option>16</option><option>24</option><option>32</option><option>48</option><option>64</option><option>128</option><option>256</option></select></label></div>
+<label class="check-row"><input id="grid" type="checkbox"><span>Reduce faint grid lines</span></label>
+<div class="rule"></div>
+<div class="panel-heading"><div><p class="eyebrow">03 / THE TURTLE</p><h2>Drawing behaviour</h2></div></div>
+<label class="field-label" for="speed">Drawing speed <output id="speedValue">Normal</output></label>
+<input id="speed" type="range" min="1" max="100" value="48">
+<div class="speed-labels"><span>Slow and satisfying</span><span>Zoom</span></div>
+<label class="check-row"><input id="fast" type="checkbox"><span>Skip the drawing animation</span></label>
+<div class="actions"><button id="generate" class="primary" type="button" disabled>Generate pixel art <span>↗</span></button><button id="compareDetail" class="secondary" type="button" disabled>Compare detail</button><button id="compareColours" class="secondary" type="button" disabled>Compare colours</button></div>
+<p class="privacy-note">Your image stays in your browser. Nothing is uploaded.</p>
+</aside>
+<section class="panel preview-panel">
+<div class="preview-head"><div><p class="eyebrow">04 / CANVAS</p><h2 id="previewTitle">Your canvas</h2></div><div class="status" id="status"><i></i><span>Waiting for an image</span></div></div>
+<div class="canvas-wrap" id="canvasWrap"><div class="empty-state" id="emptyState"><div class="empty-art">▧</div><strong>Your artwork will appear here</strong><span>Choose an image to get started</span></div><canvas id="artCanvas" hidden></canvas><canvas id="cursorCanvas" hidden></canvas></div>
+<div class="progress-row"><div class="progress-track"><div id="progressBar"></div></div><span id="progressText">0%</span></div>
+<div class="preview-footer"><span id="blockCount">No blocks yet</span><div class="preview-actions"><button class="secondary" id="pause" type="button" disabled>Pause</button><button class="secondary" id="restart" type="button" disabled>Restart</button><button class="primary small" id="download" type="button" disabled>Save PNG ↓</button></div></div>
+<div id="comparison" class="comparison" hidden></div>
+</section>
+</section>
+<footer><span>Made to draw, not just render.</span><span>Pixel Art Generator · Browser edition</span></footer>
+</main>
+<script src="app.js"></script>
+</body>
+</html>
