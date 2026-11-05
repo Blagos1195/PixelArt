@@ -54,7 +54,7 @@ function paletteRms(histogram,palette){
  let error=0,total=0;
  for(const e of histogram.values()){
   const source=e.sum.map(v=>v/e.count),mapped=nearestPaletteColor(source,palette);
-  error+=e.count*((source[0]-mapped[0])**2+(source[1]-mapped[1])**2+(source[2]-mapped[2])**2)/3;
+  error+=(e.squares[0]-2*mapped[0]*e.sum[0]+e.count*mapped[0]**2+e.squares[1]-2*mapped[1]*e.sum[1]+e.count*mapped[1]**2+e.squares[2]-2*mapped[2]*e.sum[2]+e.count*mapped[2]**2)/3;
   total+=e.count;
  }
  return total?Math.sqrt(error/total):0;
@@ -94,9 +94,9 @@ function processImage(source,opts){
   const [l,t,r,b,color]=block;if(!color[3])continue;
   const weight=Math.max(1,Math.round((r-l)*(b-t)*sampleLimit/totalArea));
   const key=[color[0]>>3,color[1]>>3,color[2]>>3].join(",");
-  const entry=histogram.get(key)||{bin:key.split(",").map(Number),count:0,sum:[0,0,0]};
+  const entry=histogram.get(key)||{bin:key.split(",").map(Number),count:0,sum:[0,0,0],squares:[0,0,0]};
   entry.count+=weight;
-  for(let c=0;c<3;c++)entry.sum[c]+=color[c]*weight;
+  for(let c=0;c<3;c++){entry.sum[c]+=color[c]*weight;entry.squares[c]+=color[c]*color[c]*weight;}
   histogram.set(key,entry);
  }
  const paletteCount=opts.colours==="auto"?null:Number(opts.colours);
