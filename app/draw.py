@@ -180,7 +180,7 @@ def representative_region_color(region, edge_strength=0):
     dominant_fraction = dominant_count / visible_count
     mode_weight = (
         1.0
-        if edge_strength >= 12 and dominant_fraction < 0.9
+        if edge_strength >= 20 and dominant_fraction < 0.9
         else min(
             0.9,
             0.35 + 0.5 * (1 - dominant_fraction) + min(0.15, edge_strength / 255),
@@ -225,9 +225,11 @@ def adaptive_blocks(
         sample_step = max(1, (cross_end - cross_start) // 128)
         best_score = 0
         best_position = None
+        best_consistency = 0
         for position in range(start + gap, end - gap + 1):
             total = 0
             samples = 0
+            strong_edges = 0
             for cross in range(cross_start, cross_end, sample_step):
                 if vertical:
                     first = gray_pixels[cross * image.width + position - 1]
@@ -235,13 +237,17 @@ def adaptive_blocks(
                 else:
                     first = gray_pixels[(position - 1) * image.width + cross]
                     second = gray_pixels[position * image.width + cross]
-                total += abs(second - first)
+                contrast = abs(second - first)
+                total += contrast
+                strong_edges += contrast >= 24
                 samples += 1
             score = total / samples
+            consistency = strong_edges / samples
             if score > best_score:
                 best_score = score
+                best_consistency = consistency
                 best_position = position
-        return best_position if best_score >= 12 else None
+        return best_position if best_score >= 20 and best_consistency >= 0.2 else None
 
     def split_region(left, top, right, bottom):
         region = image.crop((left, top, right, bottom))
@@ -257,7 +263,7 @@ def adaptive_blocks(
         exceeds_block_limit = (
             right - left > max_block_size or bottom - top > max_block_size
         )
-        significant_edge = edge_strength >= 12
+        significant_edge = edge_strength >= 16
         needs_detail = variation > variation_threshold or significant_edge
         if not exceeds_block_limit and (not needs_detail or not (split_x or split_y)):
             blocks.append((left, top, right, bottom, representative_color))
