@@ -105,7 +105,7 @@ function processImage(source,opts){
  if(count===null){count=candidates[candidates.length-1];for(const candidate of candidates){const palette=buildPalette(histogram,candidate);if(paletteRms(histogram,palette)<=8){count=candidate;break}}}
  count=Math.max(2,Math.min(256,count));
  const palette=buildPalette(histogram,count);
- const mapped=blocks.map(b=>{let c=b[4];if(c[3]&&palette.length){const nearest=nearestPaletteColor(c,palette);c=[...nearest.map(v=>v<=20?0:v),c[3]];if(bg&&dist(c,bg)<=36)c=[...bg,c[3]]}return [...b.slice(0,4),c]});
+ const mapped=blocks.map(b=>{let c=b[4];if(c[3]&&palette.length){const nearest=nearestPaletteColor(c,palette);c=[...nearest.map(v=>v<=20?0:v),c[3]];if(bg&&dist(c,bg)<=bgThreshold)c=[...bg,c[3]]}return [...b.slice(0,4),c]});
  const owner=new Int32Array(w*h);owner.fill(-1);
  for(let i=0;i<mapped.length;i++){const [l,t,r,b]=mapped[i];for(let y=t;y<b;y++)owner.fill(i,y*w+l,y*w+r)}
  for(let i=0;i<mapped.length;i++){const [l,t,r,b,c]=mapped[i],area=(r-l)*(b-t),lum=.2126*c[0]+.7152*c[1]+.0722*c[2];if(area>Math.max(2,base*base*.2)||lum<32||!c[3])continue;const edges=new Map(),count=j=>{if(j<0||j===i)return;const n=mapped[j][4];if(!n[3])return;const key=n.slice(0,3).join(",");edges.set(key,(edges.get(key)||0)+1)};if(l>0)for(let y=t;y<b;y++)count(owner[y*w+l-1]);if(r<w)for(let y=t;y<b;y++)count(owner[y*w+r]);if(t>0)for(let x=l;x<r;x++)count(owner[(t-1)*w+x]);if(b<h)for(let x=l;x<r;x++)count(owner[b*w+x]);let best=null,shared=0,total=0;for(const [key,value] of edges){total+=value;if(value>shared){best=key;shared=value}}if(best&&shared/total>=.75){const replacement=best.split(",").map(Number);if(dist(c,replacement)<=45)mapped[i][4]=[...replacement,c[3]]}} return {width:w,height:h,blocks:mapped};
