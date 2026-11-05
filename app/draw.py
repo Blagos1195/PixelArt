@@ -178,9 +178,13 @@ def representative_region_color(region, edge_strength=0):
     color_totals = totals[dominant_bin]
     dominant_count = color_totals[0]
     dominant_fraction = dominant_count / visible_count
-    mode_weight = min(
-        0.9,
-        0.35 + 0.5 * (1 - dominant_fraction) + min(0.15, edge_strength / 255),
+    mode_weight = (
+        1.0
+        if edge_strength >= 12 and dominant_fraction < 0.9
+        else min(
+            0.9,
+            0.35 + 0.5 * (1 - dominant_fraction) + min(0.15, edge_strength / 255),
+        )
     )
     mean_color = [value / visible_count for value in channel_totals]
     mode_color = [value / dominant_count for value in color_totals[1:4]]
