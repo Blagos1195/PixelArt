@@ -3,20 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#f5f5f5">
-<title>Pixel Art Generator</title>
+<meta name="theme-color" content="#ffffff">
+<title>Pixel Art</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header class="topbar">
-  <a class="brand" href="./">Pixel Art Generator</a>
-</header>
 <main class="layout">
+  <h1>Pixel Art</h1>
   <section class="workspace">
-    <aside class="panel controls">
+    <aside class="controls">
       <h2>Image</h2>
       <label class="drop-zone" id="dropZone" for="fileInput">
-        <strong>Drop an image here or browse</strong>
+        <strong>Drop an image or browse</strong>
         <small>PNG, JPG, WEBP, GIF, BMP, TIFF</small>
       </label>
       <input id="fileInput" type="file" accept="image/*" hidden>
@@ -43,12 +41,11 @@
         <button id="compareDetail" class="secondary" type="button" disabled>Compare detail</button>
         <button id="compareColours" class="secondary" type="button" disabled>Compare colours</button>
       </div>
-      <p class="privacy-note">Images are processed in your browser and are not uploaded.</p>
     </aside>
-    <section class="panel preview-panel">
+    <section class="preview-panel">
       <div class="preview-head"><h2 id="previewTitle">Preview</h2><div class="status" id="status"><i></i><span>Waiting for an image</span></div></div>
       <div class="canvas-wrap" id="canvasWrap">
-        <div class="empty-state" id="emptyState"><strong>No image selected</strong><span>Choose an image to begin</span></div>
+        <div class="empty-state" id="emptyState"><strong>No image selected</strong></div>
         <canvas id="artCanvas" hidden></canvas><canvas id="cursorCanvas" hidden></canvas>
       </div>
       <div class="progress-row"><div class="progress-track"><div id="progressBar"></div></div><span id="progressText">0%</span></div>
