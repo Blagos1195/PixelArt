@@ -39,8 +39,8 @@ function processImage(source,opts){
   let dominant=null;for(const v of bins.values())if(!dominant||v[0]>dominant[0])dominant=v;
   const fraction=dominant[0]/n,weight=Math.min(.9,.35+.5*(1-fraction)+Math.min(.15,edgeMean/510));
   const color=s.map((v,c)=>Math.round(v/n*(1-weight)+dominant[c+1]/dominant[0]*weight));
-  const sx=r-l>base,sy=b-t>base,split=(std>preset.variation||edgeMean>6)&&(sx||sy),force=(r-l>maxBlock||b-t>maxBlock);
-  if(!force&&!split){blocks.push([l,t,r,b,[...color,Math.round(alpha/n)]]);return}
+  const sx=r-l>Math.max(1,base),sy=b-t>Math.max(1,base),split=(std>preset.variation||edgeMean>6)&&(sx||sy),force=(r-l>maxBlock||b-t>maxBlock);
+  if((!force&&!split)||(!sx&&!sy)){blocks.push([l,t,r,b,[...color,Math.round(alpha/n)]]);return}
   const xs=sx?[l,Math.floor((l+r)/2),r]:[l,r],ys=sy?[t,Math.floor((t+b)/2),b]:[t,b];
   for(let yy=0;yy<ys.length-1;yy++)for(let xx=0;xx<xs.length-1;xx++)region(xs[xx],ys[yy],xs[xx+1],ys[yy+1]);
  }
