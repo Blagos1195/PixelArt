@@ -39,12 +39,12 @@ function processImage(source,opts){
   let dominant=null;for(const v of bins.values())if(!dominant||v[0]>dominant[0])dominant=v;
   const fraction=dominant[0]/n,weight=edgeMean>6&&fraction<.9?1:Math.min(.9,.35+.5*(1-fraction)+Math.min(.15,edgeMean/510));
   const color=s.map((v,c)=>Math.round(v/n*(1-weight)+dominant[c+1]/dominant[0]*weight));
-  const sx=r-l>Math.max(1,base),sy=b-t>Math.max(1,base),split=(std>preset.variation||edgeMean>6)&&(sx||sy),force=(r-l>maxBlock||b-t>maxBlock);
+  const sx=r-l>Math.max(1,base),sy=b-t>Math.max(1,base),split=(std>preset.variation||edgeMean>16)&&(sx||sy),force=(r-l>maxBlock||b-t>maxBlock);
   if((!force&&!split)||(!sx&&!sy)){blocks.push([l,t,r,b,[...color,Math.round(alpha/n)]]);return}
   const gap=Math.max(1,Math.floor(base*.35));
   let cutX=null,cutY=null,bestX=0,bestY=0;
-  if(sx&&r-l>gap*2+1){const sampleStep=Math.max(1,Math.floor((b-t)/128));for(let x=l+gap;x<=r-gap;x++){let sum=0,nSamples=0;for(let y=t;y<b;y+=sampleStep){sum+=Math.abs(gray[y*w+x]-gray[y*w+x-1]);nSamples++}const score=sum/nSamples;if(score>bestX){bestX=score;cutX=x}}if(bestX<12)cutX=null}
-  if(sy&&b-t>gap*2+1){const sampleStep=Math.max(1,Math.floor((r-l)/128));for(let y=t+gap;y<=b-gap;y++){let sum=0,nSamples=0;for(let x=l;x<r;x+=sampleStep){sum+=Math.abs(gray[y*w+x]-gray[(y-1)*w+x]);nSamples++}const score=sum/nSamples;if(score>bestY){bestY=score;cutY=y}}if(bestY<12)cutY=null}
+  if(sx&&r-l>gap*2+1){const sampleStep=Math.max(1,Math.floor((b-t)/128));for(let x=l+gap;x<=r-gap;x++){let sum=0,nSamples=0,strong=0;for(let y=t;y<b;y+=sampleStep){const contrast=Math.abs(gray[y*w+x]-gray[y*w+x-1]);sum+=contrast;if(contrast>=24)strong++;nSamples++}const score=sum/nSamples;if(score>bestX){bestX=score;cutX=strong/nSamples>=.2?x:null}}if(bestX<20)cutX=null}
+  if(sy&&b-t>gap*2+1){const sampleStep=Math.max(1,Math.floor((r-l)/128));for(let y=t+gap;y<=b-gap;y++){let sum=0,nSamples=0,strong=0;for(let x=l;x<r;x+=sampleStep){const contrast=Math.abs(gray[y*w+x]-gray[(y-1)*w+x]);sum+=contrast;if(contrast>=24)strong++;nSamples++}const score=sum/nSamples;if(score>bestY){bestY=score;cutY=strong/nSamples>=.2?y:null}}if(bestY<20)cutY=null}
   const xs=sx?[l,cutX??Math.floor((l+r)/2),r]:[l,r],ys=sy?[t,cutY??Math.floor((t+b)/2),b]:[t,b];
   for(let yy=0;yy<ys.length-1;yy++)for(let xx=0;xx<xs.length-1;xx++)region(xs[xx],ys[yy],xs[xx+1],ys[yy+1]);
  }
